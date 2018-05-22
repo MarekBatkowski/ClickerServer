@@ -1,17 +1,18 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 public class SocketThread extends Thread
 {
-    String name;
-    Socket socket;
-    int ID;
-    ArrayList<SocketThread> users;
-    ArrayList<Game> games;
-    Game currGame;
-    PrintWriter clientOut;
-    BufferedReader clientIn;
+    private String name;
+    private Socket socket;
+    private int ID;
+    private ArrayList<SocketThread> users;
+    private ArrayList<Game> games;
+    private Game currGame;
+    private PrintWriter clientOut;
+    private BufferedReader clientIn;
 
     public SocketThread(Socket socket, int ID, ArrayList<SocketThread> users, ArrayList<Game> games)
     {
@@ -28,9 +29,14 @@ public class SocketThread extends Thread
         this.name = newName;
     }
 
-    public String returnName()
+    public String returnName()     // getName already exists for Thread class : /
     {
         return name;
+    }
+
+    public PrintWriter getClientOut()
+    {
+        return clientOut;
     }
 
     public void respond(String message, PrintWriter clientOut)
@@ -60,6 +66,9 @@ public class SocketThread extends Thread
                 // exit
                 if(command[0].equals("exit") && command.length==1)
                 {
+                    if(this.currGame != null)
+                        currGame.deleteUser(this);
+
                     System.out.println(name + " is disconected");
                     users.remove(this);
                     socket.close();
@@ -117,38 +126,43 @@ public class SocketThread extends Thread
                     {
                         Game newGame = new Game(command[2]);
                         games.add(newGame);
-                        respond("Create game " + command[2], clientOut);
-                        newGame.start();
+                        respond("Created game " + command[2], clientOut);
+                    //    newGame.start();
                     }
                 }
 
                 //  join game <game name> <team>
                 else if(command[0].equals("join") && command[1].equals("game") && command.length==4) // 'join' is followed' by 'game'
                 {
-                    Game temp = null;
-
-                    for(Game g : games)
-                        if (g.returnName().equals(command[2]))  temp = g;
-
-                    if(temp == null)
-                        respond("Game of such name doesn't exist ", clientOut);
-                    else if(command[3].equals("A"))
+                    if(this.currGame != null)
+                        respond("You are a member of different game already", clientOut);
+                    else
                     {
-                        temp.addUserA(this);
-                        respond("Added to game " + command[2] + " to team A", clientOut);
-                        currGame = temp;
+                        Game temp = null;
+
+                        for(Game g : games)
+                            if (g.returnName().equals(command[2]))  temp = g;
+
+                        if(temp == null)
+                            respond("Game of such name doesn't exist ", clientOut);
+                        else if(command[3].equals("A"))
+                        {
+                            temp.addUserA(this);
+                            respond("Added to game " + command[2] + " to team A", clientOut);
+                            currGame = temp;
+                        }
+                        else if(command[3].equals("B"))
+                        {
+                            temp.addUserB(this);
+                            respond("Added to game " + command[2] + " to team B", clientOut);
+                            currGame = temp;
+                        }
+                        else respond("Pick a side! A or B", clientOut);
                     }
-                    else if(command[3].equals("B"))
-                    {
-                        temp.addUserB(this);
-                        respond("Added to game " + command[2] + " to team B", clientOut);
-                        currGame = temp;
-                    }
-                    else respond("Pick a side!", clientOut);
                 }
 
                 // quit game
-                else if(command[0].equals("quit") && command[1].equals("list") && command.length==2)
+                else if(command[0].equals("quit") && command[1].equals("game") && command.length==2)
                 {
                     if(this.currGame == null)
                         respond("You're not in game!", clientOut);
@@ -164,19 +178,30 @@ public class SocketThread extends Thread
                 else if(command[0].equals("click") && command.length==1)
                 {
                     int state = currGame.getState(this);
-                    currGame.updateGameState(this);
 
-                    if(state>200)
+                    if(state>100)
                         respond("Game over Team B won!", clientOut);
                     else if(state<0)
                         respond("Game over Team A won!", clientOut);
                     else
-                        respond("Checking game state: " +state, clientOut);
+                    {
+                        currGame.updateGameState(this);
+                        currGame.sendgameState();
+                    }
                 }
                 else    respond("unknown command", clientOut);
             }
         }
-        catch (Exception e)
+        catch (SocketException s)
+        {
+            if(this.currGame != null)
+                currGame.deleteUser(this);
+
+            System.out.println(name + " is disconected");
+            users.remove(this);
+            return;
+        }
+        catch (IOException e)
         {
             e.printStackTrace();
         }

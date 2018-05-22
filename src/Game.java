@@ -1,12 +1,10 @@
-import java.io.PrintWriter;
 import java.util.ArrayList;
 
-public class Game extends Thread
+public class Game
 {
     String Name;
     ArrayList<SocketThread> TeamA;
     ArrayList<SocketThread> TeamB;
-    boolean update;
 
     private int state;
 
@@ -15,29 +13,7 @@ public class Game extends Thread
         this.Name = Name;
         this.TeamA = new ArrayList<>();
         this.TeamB = new ArrayList<>();
-        this.state = 100;
-    }
-
-    @Override
-    public void run()
-    {
-        while(true)
-        {
-            for (SocketThread u : TeamA)
-                u.clientOut.println("Game state: " + state);
-
-            for (SocketThread u : TeamB)
-                u.clientOut.println("Game state: " + state);
-
-            try
-            {
-                Thread.sleep(200);
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-        }
+        this.state = 50;
     }
 
     public void updateGameState(SocketThread user)
@@ -47,8 +23,15 @@ public class Game extends Thread
 
         for(SocketThread u : TeamB)
             if(u == user)   state++;
+    }
 
-        update = true;
+    public void sendgameState()
+    {
+        for (SocketThread u : TeamA)
+            u.getClientOut().println("Game state: " + state);
+
+        for (SocketThread u : TeamB)
+            u.getClientOut().println("Game state: " + state);
     }
 
     public int getState(SocketThread user)

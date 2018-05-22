@@ -1,5 +1,7 @@
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -10,17 +12,26 @@ public class Main
         ArrayList<SocketThread> users = new ArrayList<>();
         ArrayList<Game> games = new ArrayList<>();
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Server port number:");
-        int portNumber = scanner.nextInt();
-
         ServerSocket serverSocket = null;
         int newThreadID = 0;
 
         try
         {
+            System.out.println("This host adress:");
+        //    System.out.println(InetAddress.getLocalHost());
+            System.out.println(InetAddress.getLocalHost().getHostAddress());
+
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Server port number:");
+            int portNumber = scanner.nextInt();
+
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Server listening at port " + portNumber);
+        }
+        catch (UnknownHostException e)
+        {
+            System.out.println("Cannot get host name");
+            e.printStackTrace();
         }
         catch (IOException e)
         {
