@@ -127,7 +127,7 @@ public class SocketThread extends Thread
                         Game newGame = new Game(command[2]);
                         games.add(newGame);
                         respond("Created game " + command[2], clientOut);
-                    //    newGame.start();
+                        newGame.start();
                     }
                 }
 
@@ -186,7 +186,7 @@ public class SocketThread extends Thread
                     else
                     {
                         currGame.updateGameState(this);
-                        currGame.sendgameState();
+                    //    currGame.sendgameState();
                     }
                 }
                 else    respond("unknown command", clientOut);

@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class Game
+public class Game extends Thread
 {
     String Name;
     ArrayList<SocketThread> TeamA;
@@ -16,22 +16,38 @@ public class Game
         this.state = 50;
     }
 
-    public void updateGameState(SocketThread user)
+    public synchronized void updateGameState(SocketThread user)
     {
         for(SocketThread u : TeamA)
             if(u == user)   state--;
 
         for(SocketThread u : TeamB)
             if(u == user)   state++;
+
     }
 
-    public void sendgameState()
+    @Override
+    public void run()
     {
-        for (SocketThread u : TeamA)
-            u.getClientOut().println("Game state: " + state);
+        //public void sendgameState()
+        //
+        while (true)
+        {
+            for (SocketThread u : TeamA)
+                u.getClientOut().println("Game state: " + state);
 
-        for (SocketThread u : TeamB)
-            u.getClientOut().println("Game state: " + state);
+            for (SocketThread u : TeamB)
+                u.getClientOut().println("Game state: " + state);
+
+            try
+            {
+                Thread.sleep(50);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
 
     public int getState(SocketThread user)
